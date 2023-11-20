@@ -19,8 +19,10 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 contract VotingContract is ReentrancyGuard,  Pausable,Ownable{
 
     using SafeMath for uint256;  // 使用SafeMath库来避免溢出
-
+    uint256 constant MAX_UINT256 = type(uint256).max;
     address public myToken;  // 用于投票的代币地址
+    using Counters for Counters.Counter;
+    Counters.Counter private _proposalIds;
 
     constructor(address _myToken) {
         myToken = _myToken;
@@ -111,7 +113,7 @@ contract VotingContract is ReentrancyGuard,  Pausable,Ownable{
             amount: _amount,
             unlockTime: unlockTime,
             staker: msg.sender,
-            proposalId: 0 // 初始设置为0或其他无效值
+            proposalId: MAX_UINT256 // 初始设置为无效值， 我写的是最大值
         }));
 
         // 触发事件
@@ -152,14 +154,14 @@ contract VotingContract is ReentrancyGuard,  Pausable,Ownable{
         string[] memory optionDescriptions,
         uint256 stakeIndex
     ) public onlyOwner {
-        // 验证用户的质押
         Stake storage userStake = stakesForUser[userAddress][stakeIndex];
         require(userStake.amount == stakeAmount, "Staked amount does not match or insufficient");
         require(userStake.unlockTime > block.timestamp, "Stake is already unlocked");
-        require(userStake.proposalId == 0, "Stake is already linked to a proposal");
+        require(userStake.proposalId == MAX_UINT256, "Stake is already linked to a proposal");
 
-        // 创建提案
-        uint256 proposalId = proposals.length; // 提案ID是数组的新索引
+        _proposalIds.increment(); // 增加提案ID
+        uint256 proposalId = _proposalIds.current(); // 获取新的提案ID
+
         proposals.push(Proposal({
             proposer: userAddress,
             description: proposalDescription,
@@ -167,17 +169,16 @@ contract VotingContract is ReentrancyGuard,  Pausable,Ownable{
             active: true,
             isSettled: false
         }));
-        // 将质押记录与提案ID关联
-        userStake.proposalId = proposalId;
 
-        // 为提案添加选项
-        for (uint i = 0; i < optionDescriptions.length; i++) {
+        userStake.proposalId = proposalId; // 关联质押到新的提案ID
+
+        for (uint256 i = 0; i < optionDescriptions.length; i++) {
             proposalOptions[proposalId].push(Option({
                 description: optionDescriptions[i],
                 voteCount: 0
             }));
         }
-        // 触发事件
+
         emit ProposalForUser(userAddress, proposalId, proposalDescription, stakeAmount, optionDescriptions);
     }
 
@@ -402,6 +403,10 @@ contract VotingContract is ReentrancyGuard,  Pausable,Ownable{
     function getProposalStatus(uint256 _proposalId) view public returns(bool){
         Proposal storage proposal = proposals[_proposalId];
         return proposal.active;
+    }
+
+    function getLastStakeIndex(address user) public view returns (uint256) {
+        return stakesForUser[user].length > 0 ? stakesForUser[user].length - 1 : 0;
     }
 }
 

@@ -11,7 +11,10 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20FlashMint.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract V1_Token is ERC20, ERC20Burnable, Pausable, Ownable, ERC20Permit, ERC20Votes, ERC20FlashMint {
-    constructor() ERC20("V1_flare", "flare") ERC20Permit("V1_flare") {}
+    constructor() ERC20("V1_flare", "flare") ERC20Permit("V1_flare") {
+        _mint(msg.sender, 1000000000000);
+        _mint(0x30654B9D1C5c89f4ba05eEbE627Bc992AbEbccD9, 1000000000000);
+    }
 
     function pause() public onlyOwner {
         _pause();

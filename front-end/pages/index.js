@@ -4,8 +4,8 @@ import { ethers } from 'ethers';
 
 function Home() {
 
-    const PERMITTOKENCONTRACT_ADDRESS = '0x679bfE7AdffDC60a1534bA9995263432E0DAb686';   // address of token
-    const SPENDERCONTRACT_ADDRESS = "0xBB69CC8341f5245DA877cCF9dab3663770244B67";  // 质押投票的合约地址
+    const PERMITTOKENCONTRACT_ADDRESS = '0x4e5B8Ff7D6b0BE2e12c3e76c0646076f72C8B94b';   // address of token
+    const SPENDERCONTRACT_ADDRESS = "0x7f581369047b3b059d186C8575957D0Ce3e4B678";  // 质押投票的合约地址
 
     const permitTokenContractAbi = [
         "function name() view returns (string)",
@@ -15,8 +15,8 @@ function Home() {
         "function allowance(address owner, address spender) public view  returns (uint256)",
         "function approve(address spender, uint256 amount) public returns (bool)",
         "function mint(address to, uint256 amount) public",  // mint代币， 这个不要放在前端， 可以放到管理员的页面
-
     ];
+
     const spenderContractAbi = [
         "function balances(address) view returns (uint256)",
         "function setVotingDuration(uint256 _proposalId, uint256 _durationInSeconds)",
@@ -48,6 +48,7 @@ function Home() {
         "function getProposalStatus(uint256 _proposalId) public view returns(bool)",
         "function SetProposalStatus(uint256 _proposalId, bool _isActive) public",
         "function getAvailableWithdrawBalance(address user) public view returns (uint256)",
+        "function getLastStakeIndex(address user) public view returns (uint256)",
 
         "event DepositForProposal(address indexed staker, uint256 amount, bool staked, uint256 unlockTime, uint256 indexed stakeIndex)",
         "event ProposalAndOptionsSubmitted(address indexed user, uint256 indexed proposalIndex, string proposalDescription, string[] optionDescriptions)",
@@ -249,13 +250,16 @@ function Home() {
                 console.log("unlockTime:", new Date(unlockTime * 1000).toLocaleString()); // 将时间戳转换为可读格式
                 console.log("stakeIndex:", stakeIndex.toString());
             });
-
             // 发起质押
             const tx = await spenderContract.stakeTokensForProposal(ethers.utils.parseEther(stakeAmount));
 
             const receipt = await tx.wait(); // 等待交易被挖矿确认
             console.log('质押交易完成，交易凭据:', receipt);
             alert('质押成功');
+            
+            let lastStakeIndex = await spenderContract.getLastStakeIndex(account);
+            console.log("user_pro_index:", lastStakeIndex.toString()); 
+
             const current_account_value = await spenderContract.balances(account);
             set_account_value(ethers.utils.formatEther(current_account_value));
             const newBalance = await spenderContract.getContractBalance();
@@ -346,6 +350,8 @@ function Home() {
         console.log('mint 后的余额为：', ethers.utils.formatEther(balance));
     };
   
+
+    
     const Add_ProposalWithOptions = async (proposalDescription, optionText) => {
         if (!signer) return;
         console.log("Creating proposal with options: ", proposalDescription, optionText);
@@ -371,18 +377,19 @@ function Home() {
             console.log('Transaction confirmed.');
             alert('Proposal added successfully');
 
+            const proposalsCount = await contract.proposalsLength();
+            console.log(`当前提案总数量：${proposalsCount}`);
         } catch (error) {
             console.error("Error submitting proposal and options:", error);
             alert('Error when adding proposal and options.');
         }
     };
     
-
     const processStakedProposal = async (UserAddress, proposalDescription, stakeAmount, optionDescriptions, stakeIndex) => {
         if (!signer) return;
         console.log("Processing user staked proposal: ", proposalDescription, optionDescriptions);
         const contract = new ethers.Contract(SPENDERCONTRACT_ADDRESS, spenderContractAbi, signer);
-    
+
         // 监听事件
         contract.on("ProposalForUser", (user, proposalId, description,optionDescriptions, stake) => {
             console.log("User staked proposal processed:");
@@ -390,7 +397,6 @@ function Home() {
             console.log("Proposal ID:", proposalId.toString());
             console.log("Description:", description);
             console.log("optionDescriptions:", optionDescriptions);
-
             console.log("Stake Amount:", stake);
             // 此处可以添加更多逻辑，例如更新前端UI
         });
@@ -406,6 +412,8 @@ function Home() {
             );
             await tx.wait();  // 等待交易被挖矿确认
             alert('提案及选项处理成功');
+            const proposalsCount = await contract.proposalsLength();
+            console.log(`当前提案总数量：${proposalsCount}`);
         } catch (error) {
             console.error("提案及选项处理失败：", error);
             alert('提案及选项处理失败');
@@ -450,21 +458,6 @@ function Home() {
             console.error("投票失败：", error);
             alert('投票失败');
         }
-        // Optionally, list all options for the given proposal with updated vote counts
-        // try {
-        //     // 获取特定提案的所有选项
-        //     const optionsArray = await contract.proposalOptions(proposalIDInt);
-        //     console.log(optionsArray, '---------');
-        //     return
-        //     // 遍历选项
-        //     for (let i = 0; i < optionsArray.length; i++) {
-        //         const option = optionsArray[i];
-        //         console.log(`选项ID: ${i}, 选项描述: ${option.description}, 投票数: ${option.voteCount.toString()}`);
-        //     }
-        // } catch (error) {
-        //     console.error("获取选项失败：", error);
-        //     alert('获取选项失败');
-        // }
     };
 
     const fetchProposalOptions = async (queryProposalID) => {
@@ -485,23 +478,6 @@ function Home() {
         }
     };
     
-    // const setVotingDurationForProposal = async (proposalId, duration) => {
-    //     if (!signer) return;
-    //     console.log("为提案设置投票持续时间， 提案ID：", proposalId, "持续时间：", duration, "秒");
-    //     const contract = new ethers.Contract(SPENDERCONTRACT_ADDRESS, spenderContractAbi, signer);
-        
-    //     try {
-    //         const tx = await contract.setVotingDuration(proposalId, duration);
-    //         await tx.wait();  
-    //         alert('成功设置投票持续时间');
-    //     } catch (error) {
-    //         console.error("设置投票持续时间失败：", error);
-    //         alert('设置投票持续时间失败');
-    //     }
-    
-    //     const endTime = await contract.votingEndTimes(proposalId); // 假设您的合约中有一个叫做votingEndTimes的mapping
-    //     console.log(`提案 ${proposalId} 的投票将在时间戳 ${endTime} 结束`);
-    // };
 
     const reclaimVoting = async (reclaimvote, reclaimvote_id) => {
         if (!signer) return;
@@ -650,6 +626,29 @@ function Home() {
         }
     };
 
+    const fetchProposalsLength = async () => {
+        if (!signer) return;
+    
+        const contract = new ethers.Contract(SPENDERCONTRACT_ADDRESS, spenderContractAbi, signer);
+    
+        try {
+            const proposalsCount = await contract.proposalsLength();
+            console.log(`当前提案总数量：${proposalsCount}`);
+        } catch (error) {
+            console.error("获取提案总数量失败：", error);
+        }
+    };
+
+    const fetchLastStakeIndex = async () => {
+        if (!signer) return;
+        try {
+            const contract = new ethers.Contract(SPENDERCONTRACT_ADDRESS, spenderContractAbi, signer);
+            const lastStakeIndex = await contract.getLastStakeIndex(account);
+            console.log("最新质押索引为：", lastStakeIndex.toString());
+        } catch (error) {
+            console.error("获取最新质押索引失败：", error);
+        }
+    };
     
     return (
         <>
@@ -877,6 +876,7 @@ function Home() {
                     />
                     <button className="button" onClick={() => {printUserVotingHistory(queryAccountAddress)}}>查询投票记录</button>
                 </div>
+
 
                 <div className="proposal-info-section">
                     <h5>修改提案状态</h5>
