@@ -127,7 +127,9 @@ contract VotingContract is ReentrancyGuard,  Pausable,Ownable{
     ) public onlyOwner {
 
         // 创建提案
-        uint256 proposalId = proposals.length; // 提案ID是数组的新索引
+        uint256 proposalId = _proposalIds.current(); // 获取新的提案ID
+        _proposalIds.increment(); // 增加提案ID
+        
         proposals.push(Proposal({
             proposer: msg.sender,
             description: proposalDescription,
@@ -159,8 +161,8 @@ contract VotingContract is ReentrancyGuard,  Pausable,Ownable{
         require(userStake.unlockTime > block.timestamp, "Stake is already unlocked");
         require(userStake.proposalId == MAX_UINT256, "Stake is already linked to a proposal");
 
-        _proposalIds.increment(); // 增加提案ID
         uint256 proposalId = _proposalIds.current(); // 获取新的提案ID
+        _proposalIds.increment(); // 增加提案ID
 
         proposals.push(Proposal({
             proposer: userAddress,

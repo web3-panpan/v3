@@ -4,8 +4,8 @@ import { ethers } from 'ethers';
 
 function Home() {
 
-    const PERMITTOKENCONTRACT_ADDRESS = '0x8A59C17c1Ae5647dBDF3Bc08965E6F9f2262e041';   // address of token
-    const SPENDERCONTRACT_ADDRESS = "0xBD9eb4C31eBF2526dF5e2C25F270a3AF38AD8B15";  // 质押投票的合约地址
+    const PERMITTOKENCONTRACT_ADDRESS = '0xD80e44DE530c60537225A404cf49b28f6cE536BC';   // address of token
+    const SPENDERCONTRACT_ADDRESS = "0xF33189F5834Fc55bAe14b7e5b069aCb9401be45f";  // 质押投票的合约地址
 
     const permitTokenContractAbi = [
         "function name() view returns (string)",
@@ -400,7 +400,7 @@ function Home() {
             console.log("Stake Amount:", stake);
             // 此处可以添加更多逻辑，例如更新前端UI
         });
-    
+
         try {
             // 发起处理质押提案的请求
             const tx = await contract.processUserStakedProposal(
