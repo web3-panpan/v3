@@ -4,8 +4,8 @@ import { ethers } from 'ethers';
 
 function Home() {
 
-    const PERMITTOKENCONTRACT_ADDRESS = '0x4e5B8Ff7D6b0BE2e12c3e76c0646076f72C8B94b';   // address of token
-    const SPENDERCONTRACT_ADDRESS = "0x7f581369047b3b059d186C8575957D0Ce3e4B678";  // 质押投票的合约地址
+    const PERMITTOKENCONTRACT_ADDRESS = '0x8A59C17c1Ae5647dBDF3Bc08965E6F9f2262e041';   // address of token
+    const SPENDERCONTRACT_ADDRESS = "0xBD9eb4C31eBF2526dF5e2C25F270a3AF38AD8B15";  // 质押投票的合约地址
 
     const permitTokenContractAbi = [
         "function name() view returns (string)",
