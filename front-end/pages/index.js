@@ -4,8 +4,8 @@ import { ethers } from 'ethers';
 
 function Home() {
 
-    const PERMITTOKENCONTRACT_ADDRESS = '0xD80e44DE530c60537225A404cf49b28f6cE536BC';   // address of token
-    const SPENDERCONTRACT_ADDRESS = "0xF33189F5834Fc55bAe14b7e5b069aCb9401be45f";  // 质押投票的合约地址
+    const PERMITTOKENCONTRACT_ADDRESS = '0x3065dE85a66Eb86158B96cCAd7bED625F3B29E63';   // address of token
+    const SPENDERCONTRACT_ADDRESS = "0x3Dae51389a6A2C1aEEd7937D068365B35bC23295";  // 质押投票的合约地址
 
     const permitTokenContractAbi = [
         "function name() view returns (string)",
@@ -49,6 +49,7 @@ function Home() {
         "function SetProposalStatus(uint256 _proposalId, bool _isActive) public",
         "function getAvailableWithdrawBalance(address user) public view returns (uint256)",
         "function getLastStakeIndex(address user) public view returns (uint256)",
+        "function getCurrentProposalId() public view returns (uint256)",
 
         "event DepositForProposal(address indexed staker, uint256 amount, bool staked, uint256 unlockTime, uint256 indexed stakeIndex)",
         "event ProposalAndOptionsSubmitted(address indexed user, uint256 indexed proposalIndex, string proposalDescription, string[] optionDescriptions)",
@@ -221,7 +222,6 @@ function Home() {
         }
     };
 
-
     const handleStakeTokensForProposal = async (stakeAmount) => {
         console.log("handleStakeTokensForProposal 被调用，质押金额为: ", stakeAmount);
         if (!signer) return;
@@ -378,6 +378,10 @@ function Home() {
             alert('Proposal added successfully');
 
             const proposalsCount = await contract.proposalsLength();
+            const proposalscurrent_id =  await contract.getCurrentProposalId();
+
+            console.log(`当前提案id：${proposalscurrent_id}`);
+
             console.log(`当前提案总数量：${proposalsCount}`);
         } catch (error) {
             console.error("Error submitting proposal and options:", error);
@@ -413,13 +417,16 @@ function Home() {
             await tx.wait();  // 等待交易被挖矿确认
             alert('提案及选项处理成功');
             const proposalsCount = await contract.proposalsLength();
+            const proposalscurrent_id =  await contract.getCurrentProposalId();
+
+            console.log(`当前提案id：${proposalscurrent_id}`);
+
             console.log(`当前提案总数量：${proposalsCount}`);
         } catch (error) {
             console.error("提案及选项处理失败：", error);
             alert('提案及选项处理失败');
         }
     };
-
 
     const vote = async (voteProposalID, voteOptionID, voteAmount) => {
         if (!signer) return;

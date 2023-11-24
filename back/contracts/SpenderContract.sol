@@ -410,6 +410,20 @@ contract VotingContract is ReentrancyGuard,  Pausable,Ownable{
     function getLastStakeIndex(address user) public view returns (uint256) {
         return stakesForUser[user].length > 0 ? stakesForUser[user].length - 1 : 0;
     }
+
+    function getCurrentProposalId() public view returns (uint256) {
+        uint256 proposalArrayLength = proposals.length;
+        uint256 currentCounterValue = _proposalIds.current();
+
+        if (proposalArrayLength == currentCounterValue) {
+            // 如果数组长度和计数器的值相等，返回当前的提案ID
+            return currentCounterValue - 1;
+        } else {
+            // 如果不相等，可以返回一个错误标识或默认值
+            return MAX_UINT256; // 例如返回一个最大值表示错误
+        }
+}   
+
 }
 
 
